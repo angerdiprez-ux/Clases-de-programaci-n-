@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>Tabla de Multiplicar</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#020617;
+  --surface:#0f172a;
+  --surface-hover:#1e293b;
+  --txt:#f8fafc;
+  --muted:#94a3b8;
+  --line:#1e293b;
+  --accent:#3b82f6;
+  --accent-glow:rgba(59,130,246,0.3);
+  --ok:#10b981;
+  --bad:#ef4444;
+}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  color:var(--txt);
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(59,130,246,0.15) 0%, transparent 40%),
+    radial-gradient(circle at 85% 100%, rgba(16,185,129,0.1) 0%, transparent 40%);
+  background-attachment:fixed;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.app{max-width:760px;margin:0 auto;padding:0 16px 60px}
+
+/* ---------- Barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 0;pointer-events:none;
+}
+.topbar > * { pointer-events:auto; }
+.icon-btn{
+  width:44px;height:44px;flex:0 0 44px;
+  border-radius:12px;border:1px solid var(--line);
+  background:rgba(15,23,42,0.7);color:var(--txt);
+  font-size:1.3rem;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+.icon-btn:active{transform:scale(0.92);background:var(--surface-hover)}
+.invisible{visibility:hidden}
+.hidden{display:none!important}
+
+/* ---------- Transiciones de Pantallas ---------- */
+.screen{display:none}
+.screen.active{display:block;animation:screenFadeIn .4s cubic-bezier(0.16, 1, 0.3, 1) forwards}
+@keyframes screenFadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.screen-title{font-size:1.4rem;margin:0 0 20px;text-align:center;color:var(--txt);font-weight:700;letter-spacing:-0.5px}
+
+/* ---------- Menú Principal ---------- */
+.hero{text-align:center;padding:40px 10px 30px;animation:heroIn .6s ease}
+@keyframes heroIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.hero h2{
+  margin:0 0 10px;font-size:2.4rem;font-weight:800;
+  letter-spacing:-1px;
+  background:linear-gradient(135deg, #ffffff, #94a3b8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{margin:0;color:var(--muted);font-size:1rem;font-weight:500}
+
+.menu-btn{
+  width:100%;display:flex;align-items:center;gap:16px;
+  padding:20px;margin-bottom:16px;
+  border:1px solid var(--line);border-radius:16px;
+  background:rgba(15,23,42,0.6);
+  backdrop-filter:blur(10px);
+  color:var(--txt);cursor:pointer;text-align:left;font-family:inherit;
+  transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:0 8px 24px rgba(0,0,0,0.2);
+}
+.menu-btn:hover{border-color:rgba(59,130,246,0.4);background:rgba(30,41,59,0.7)}
+.menu-btn:active{transform:scale(0.98) translateY(2px);box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+.mb-icon{
+  font-size:1.6rem;display:flex;align-items:center;justify-content:center;
+  width:48px;height:48px;border-radius:12px;background:rgba(59,130,246,0.15);color:#60a5fa;
+}
+.mb-text{flex:1;display:flex;flex-direction:column;gap:4px}
+.mb-text strong{font-size:1.15rem;font-weight:700;color:var(--txt)}
+.mb-text small{color:var(--muted);font-size:.85rem;line-height:1.4}
+.mb-arrow{font-size:1.5rem;color:var(--muted);line-height:1;transition:transform .2s}
+.menu-btn:hover .mb-arrow{transform:translateX(4px);color:var(--accent)}
+
+/* Animación de Racha Rota */
+.streak-pill.broken {
+  animation: breakStreak 1.2s ease forwards;
+}
+@keyframes breakStreak {
+  0% { transform: scale(1); color: #fff; border-color: var(--line); }
+  20% { transform: scale(1.2) rotate(-10deg); color: #ef4444; border-color: #ef4444; }
+  40% { transform: scale(1.1) rotate(10deg); color: #ef4444; border-color: #ef4444; }
+  60% { transform: scale(0.8); filter: grayscale(1); opacity: 0.5; }
+  80% { transform: scale(1); filter: grayscale(1); opacity: 0.8; }
+  100% { transform: scale(1); filter: grayscale(1); opacity: 1; }
+}
+  
+  /* ---------- Aprender Tabla ---------- */
+.num-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(56px,1fr));
+  gap:10px;margin-bottom:24px;
+}
+.num-btn{
+  height:56px;border-radius:14px;
+  border:1px solid var(--line);background:var(--surface);
+  color:var(--muted);font-size:1.1rem;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.num-btn:active{transform:scale(0.95)}
+.num-btn.sel{
+  background:var(--accent);color:#fff;border-color:var(--accent);
+  box-shadow:0 0 20px var(--accent-glow);
+  transform:scale(1.05);
+}
+.table-card{
+  border:1px solid var(--line);border-radius:20px;
+  padding:24px 20px;background:var(--surface);
+  box-shadow:0 12px 32px rgba(0,0,0,0.3);
+}
+.table-card h3{margin:0 0 20px;text-align:center;font-size:1.3rem;color:var(--txt);font-weight:700}
+.table-body{display:flex;flex-direction:column;gap:8px}
+.trow{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 18px;border-radius:10px;
+  background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);
+  font-size:1.1rem;animation:rowIn .4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes rowIn{from{opacity:0;transform:translateX(-15px)}to{opacity:1;transform:translateX(0)}}
+.ta,.tb{min-width:34px;text-align:center;color:var(--txt);font-weight:700}
+.tx,.teq{color:var(--muted);font-weight:400}
+.tr{margin-left:auto;font-weight:800;font-size:1.2rem;color:var(--bad)}
+
+/* ---------- Dificultad y Selección ---------- */
+.diff-list{display:flex;flex-direction:column;gap:14px;margin-top:10px;margin-bottom:24px}
+.diff-btn{
+  display:flex;align-items:center;gap:16px;
+  padding:22px 20px;border-radius:16px;
+  border:1px solid var(--line);background:var(--surface);
+  color:var(--txt);cursor:pointer;font-family:inherit;text-align:left;
+  transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:0 8px 20px rgba(0,0,0,0.15);
+}
+.diff-btn:active{transform:scale(0.97)}
+.d-emoji{font-size:1.5rem;line-height:1;filter:grayscale(0.5);transition:filter .3s}
+.d-text{display:flex;flex-direction:column;gap:4px}
+.d-text strong{font-size:1.15rem;font-weight:700;transition:color .3s}
+.d-text small{color:var(--muted);font-size:.85rem}
+
+/* Efectos de selección iluminados */
+.diff-btn.selected { transform: scale(1.02); }
+.diff-btn.selected .d-emoji { filter: grayscale(0); }
+.diff-btn.easy.selected { border-color: #10b981; background: rgba(16,185,129,0.1); box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+.diff-btn.easy.selected .d-text strong { color: #34d399; }
+.diff-btn.normal.selected { border-color: #eab308; background: rgba(234,179,8,0.1); box-shadow: 0 0 20px rgba(234,179,8,0.4); }
+.diff-btn.normal.selected .d-text strong { color: #fbbf24; }
+.diff-btn.hard.selected { border-color: #ef4444; background: rgba(239,68,68,0.1); box-shadow: 0 0 20px rgba(239,68,68,0.4); }
+.diff-btn.hard.selected .d-text strong { color: #f87171; }
+.diff-btn.superhard.selected { border-color: #a855f7; background: rgba(168,85,247,0.1); box-shadow: 0 0 20px rgba(168,85,247,0.4); }
+.diff-btn.superhard.selected .d-text strong { color: #c084fc; }
+
+/* Botón de Jugar */
+#btnPlay {
+  width: 100%; padding: 18px; border-radius: 16px;
+  background: var(--accent); color: #fff; border: none;
+  font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 8px 24px var(--accent-glow);
+  animation: popIn .4s cubic-bezier(0.16, 1, 0.3, 1) forwards, pulseBtn 1.5s infinite 0.4s;
+}
+#btnPlay:active { transform: scale(0.95); box-shadow: 0 4px 12px var(--accent-glow); animation: none; }
+@keyframes popIn{from{opacity:0;transform:scale(0.9) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes pulseBtn {
+  0% { transform: scale(1); box-shadow: 0 8px 24px var(--accent-glow); }
+  50% { transform: scale(1.04); box-shadow: 0 12px 30px rgba(59,130,246,0.6); }
+  100% { transform: scale(1); box-shadow: 0 8px 24px var(--accent-glow); }
+}
+
+/* ---------- Juego ---------- */
+.game-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px}
+.diff-label{padding:8px 16px;border-radius:8px;font-size:.8rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;}
+.diff-label.easy{background:rgba(16,185,129,0.15);color:#34d399}
+.diff-label.normal{background:rgba(234,179,8,0.15);color:#fbbf24}
+.diff-label.hard{background:rgba(239,68,68,0.15);color:#f87171}
+.diff-label.superhard{background:rgba(168,85,247,0.15);color:#c084fc}
+
+.score-board{display:flex;gap:10px}
+.streak-pill, .record-pill{padding:8px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--line);font-size:.9rem;font-weight:800;box-shadow:0 4px 10px rgba(0,0,0,0.1); transition: all .3s;}
+.record-pill{border-color:rgba(234,179,8,0.3);color:#fde047}
+
+.question-card{
+  border:1px solid var(--line);border-radius:24px;
+  padding:40px 20px;text-align:center;margin-bottom:28px;
+  background:linear-gradient(180deg, var(--surface) 0%, rgba(15,23,42,0.5) 100%);
+  box-shadow:0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.q-sub{color:var(--muted);font-size:.95rem;margin-bottom:12px;letter-spacing:1px;font-weight:600;text-transform:uppercase}
+.question{font-size:clamp(3rem,14vw,4.5rem);font-weight:800;letter-spacing:1px;line-height:1.1;color:#fff;text-shadow:0 4px 20px rgba(255,255,255,0.2);}
+.question.pop{animation:qPop .4s cubic-bezier(0.16, 1, 0.3, 1)}
+@keyframes qPop{0%{opacity:0;transform:scale(0.8)}100%{opacity:1;transform:scale(1)}}
+.question.shake{animation:shakeX .4s ease-in-out}
+
+.options{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.opt-btn{
+  padding:26px 8px;border-radius:16px;
+  border:1px solid var(--line);background:var(--surface);
+  color:var(--txt);font-size:1.6rem;font-weight:800;
+  cursor:pointer;font-family:inherit;transition:all .15s ease;
+  box-shadow:0 6px 16px rgba(0,0,0,0.2);
+}
+.opt-btn:active:not(:disabled){transform:scale(0.92);background:var(--surface-hover)}
+.opt-btn.correct{background:var(--ok);color:#fff;border-color:var(--ok);box-shadow:0 0 24px rgba(16,185,129,0.6);animation:pulseOk .4s ease;}
+.opt-btn.wrong{background:rgba(239,68,68,0.1);color:var(--bad);border-color:var(--bad);opacity:0.5;animation:shakeX .4s ease-in-out;}
+@keyframes pulseOk{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}50%{transform:translateX(8px)}80%{transform:translateX(-5px)}}
+
+/* ---------- Animación de acierto / error ---------- */
+.feedback{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;}
+.feedback.show{animation:fbPop .9s cubic-bezier(0.16, 1, 0.3, 1) forwards}
+.feedback.wrong.show{animation:fbWrong .8s cubic-bezier(0.16, 1, 0.3, 1) forwards}
+.feedback::after{
+  content:'';display:block;width:140px;height:140px;border-radius:50%;
+  box-shadow:0 0 60px 20px rgba(16,185,129,0.4);
+  background:radial-gradient(circle, rgba(16,185,129,0.8) 0%, transparent 70%);
+  display:flex;align-items:center;justify-content:center;font-size:4rem;
+}
+.feedback.wrong::after{
+  box-shadow:0 0 60px 20px rgba(239,68,68,0.4);
+  background:radial-gradient(circle, rgba(239,68,68,0.8) 0%, transparent 70%);
+}
+@keyframes fbPop{0%{opacity:0;transform:scale(0.5) rotate(-10deg)}30%{opacity:1;transform:scale(1.1) rotate(5deg)}60%{opacity:1;transform:scale(1) rotate(0)}100%{opacity:0;transform:scale(1.3) translateY(-30px)}}
+@keyframes fbWrong{0%{opacity:0;transform:scale(0.5)}30%{opacity:1;transform:scale(1.1) rotate(-5deg)}60%{opacity:1;transform:scale(1) rotate(5deg)}100%{opacity:0;transform:scale(1.2)}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <button id="backBtn" class="icon-btn invisible" aria-label="Volver">←</button>
+  </header>
+
+  <main>
+    <!-- MENÚ -->
+    <section id="screen-menu" class="screen active">
+      <div class="hero">
+        <h2>Tabla de Multiplicar</h2>
+        <p>Entrenamiento y práctica · 1 al 20</p>
+      </div>
+      <button class="menu-btn" id="btnLearn">
+        <span class="mb-icon">📖</span>
+        <span class="mb-text"><strong>Modo Estudio</strong><small>Explora y memoriza las tablas del 1 al 20</small></span>
+        <span class="mb-arrow">›</span>
+      </button>
+      <button class="menu-btn" id="btnGame">
+        <span class="mb-icon">⚡</span>
+        <span class="mb-text"><strong>Entrenamiento</strong><small>Pon a prueba tu rapidez y supera tu récord</small></span>
+        <span class="mb-arrow">›</span>
+      </button>
+    </section>
+
+    <!-- APRENDER -->
+    <section id="screen-learn" class="screen">
+      <h2 class="screen-title">Selecciona una tabla</h2>
+      <div class="num-grid" id="tableGrid"></div>
+      <div class="table-card">
+        <h3 id="tableTitle">Tabla del 1</h3>
+        <div id="tableBody" class="table-body"></div>
+      </div>
+    </section>
+
+    <!-- DIFICULTAD -->
+    <section id="screen-diff" class="screen">
+      <h2 class="screen-title">Nivel de Entrenamiento</h2>
+      <div class="diff-list">
+        <button class="diff-btn easy" data-diff="easy">
+          <span class="d-emoji">🟢</span>
+          <span class="d-text"><strong>Fácil</strong><small>Tablas del 1 al 5</small></span>
+        </button>
+        <button class="diff-btn normal" data-diff="normal">
+          <span class="d-emoji">🟡</span>
+          <span class="d-text"><strong>Normal</strong><small>Tablas del 2 al 9</small></span>
+        </button>
+        <button class="diff-btn hard" data-diff="hard">
+          <span class="d-emoji">🔴</span>
+          <span class="d-text"><strong>Difícil</strong><small>Tablas del 10 al 20</small></span>
+        </button>
+        <button class="diff-btn superhard" data-diff="superhard">
+          <span class="d-emoji">🟣</span>
+          <span class="d-text"><strong>Súper Difícil</strong><small>Mezcla aleatoria de todas las tablas</small></span>
+        </button>
+      </div>
+      <button id="btnPlay" class="hidden">JUGAR</button>
+    </section>
+
+    <!-- JUEGO -->
+    <section id="screen-game" class="screen">
+      <div class="game-head">
+        <span id="diffLabel" class="diff-label easy">Fácil</span>
+        <div class="score-board">
+          <span id="recordPill" class="record-pill">🏆 0</span>
+          <span id="streakPill" class="streak-pill">🔥 0</span>
+        </div>
+      </div>
+      <div class="question-card">
+        <div class="q-sub">¿Cuánto es?</div>
+        <div id="question" class="question">1 × 1</div>
+      </div>
+      <div id="options" class="options"></div>
+    </section>
+  </main>
+</div>
+
+<div id="feedback" class="feedback"></div>
+  
+  <script>
+const $ = id => document.getElementById(id);
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+function shuffle(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+let actx = null;
+function beep(freq, dur, type = 'sine', vol = 0.05){
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(vol, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+    o.start(); o.stop(actx.currentTime + dur);
+  }catch(e){}
+}
+
+/* NAVEGACIÓN */
+const SCREENS = ['menu','learn','diff','game'];
+let currentScreen = 'menu';
+
+function showScreen(name){
+  SCREENS.forEach(n => $('screen-' + n).classList.toggle('active', n === name));
+  currentScreen = name;
+  $('backBtn').classList.toggle('invisible', name === 'menu');
+  
+  if(name === 'diff'){
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    $('btnPlay').classList.add('hidden');
+    selectedDifficulty = null;
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+$('backBtn').addEventListener('click', () => {
+  if(currentScreen === 'game') showScreen('diff');
+  else if(currentScreen === 'diff') showScreen('menu');
+  else if(currentScreen === 'learn') showScreen('menu');
+});
+
+/* APRENDER TABLAS */
+const grid = $('tableGrid');
+for(let i = 1; i <= 20; i++){
+  const b = document.createElement('button');
+  b.className = 'num-btn';
+  b.textContent = i;
+  b.dataset.n = i;
+  b.addEventListener('click', () => renderTable(i));
+  grid.appendChild(b);
+}
+
+function renderTable(n){
+  document.querySelectorAll('.num-btn').forEach(b => {
+    b.classList.toggle('sel', Number(b.dataset.n) === n);
+  });
+  $('tableTitle').textContent = 'Tabla del ' + n;
+  const body = $('tableBody');
+  body.innerHTML = '';
+  for(let i = 1; i <= 10; i++){
+    const row = document.createElement('div');
+    row.className = 'trow';
+    row.style.animationDelay = (i * 30) + 'ms';
+    row.innerHTML = `<span class="ta">${n}</span><span class="tx">×</span><span class="tb">${i}</span><span class="teq">=</span><span class="tr">${n * i}</span>`;
+    body.appendChild(row);
+  }
+}
+
+/* MINI JUEGO */
+const DIFFS = {
+  easy:      { label: 'Fácil',        min: 1,  max: 5  },
+  normal:    { label: 'Normal',       min: 2,  max: 9  },
+  hard:      { label: 'Difícil',      min: 10, max: 20 },
+  superhard: { label: 'Súper Difícil',min: 2,  max: 20 } 
+};
+
+let difficulty = 'easy';
+let selectedDifficulty = null;
+let answer = 0;
+let locked = false;
+let score = 0;
+let streak = 0;
+let mistakes = 0; // Contador de errores en la pregunta actual
+
+/* RÉCORD: Solo sube, nunca baja */
+let record = parseInt(localStorage.getItem('tabla_record_pro')) || 0;
+$('recordPill').textContent = '🏆 ' + record;
+
+$('btnLearn').addEventListener('click', () => { renderTable(1); showScreen('learn'); });
+$('btnGame').addEventListener('click', () => showScreen('diff'));
+
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedDifficulty = btn.dataset.diff;
+    $('btnPlay').classList.remove('hidden');
+  });
+});
+
+$('btnPlay').addEventListener('click', () => {
+  if(selectedDifficulty){
+    startGame(selectedDifficulty);
+  }
+});
+
+function startGame(diff){
+  difficulty = diff;
+  score = 0;
+  streak = 0;
+  updateScore(false);
+  
+  const d = DIFFS[diff];
+  const label = $('diffLabel');
+  label.textContent = d.label;
+  label.className = 'diff-label ' + diff;
+
+  showScreen('game');
+  newQuestion();
+}
+
+function newQuestion(){
+  locked = false;
+  mistakes = 0; // Reiniciamos los errores para esta pregunta
+  
+  // Restaurar estilo del fueguito si estaba roto
+  $('streakPill').classList.remove('broken');
+
+  const d = DIFFS[difficulty];
+  const a = randInt(d.min, d.max);
+  const b = randInt(d.min, d.max);
+  answer = a * b;
+
+  const q = $('question');
+  q.textContent = a + ' × ' + b;
+  q.classList.remove('pop');
+  void q.offsetWidth;
+  q.classList.add('pop');
+
+  const opts = buildOptions(answer);
+  const box = $('options');
+  box.innerHTML = '';
+
+  opts.forEach(v => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = v;
+    btn.addEventListener('click', () => choose(btn, v));
+    box.appendChild(btn);
+  });
+}
+
+function buildOptions(correct){
+  const set = new Set([correct]);
+  const rango = Math.max(3, Math.round(correct * 0.15));
+  let guard = 0;
+  while(set.size < 3 && guard < 100){
+    guard++;
+    const delta = randInt(1, rango);
+    const signo = Math.random() < 0.5 ? -1 : 1;
+    const cand = correct + signo * delta;
+    if(cand > 0 && cand !== correct) set.add(cand);
+  }
+  let extra = 1;
+  while(set.size < 3){
+    if(correct + extra > 0) set.add(correct + extra);
+    extra++;
+  }
+  return shuffle([...set]);
+}
+
+function choose(btn, value){
+  if(locked) return;
+
+  if(value === answer){
+    // ACIERTO
+    locked = true;
+    btn.classList.add('correct');
+    score++; 
+    streak++;
+    updateScore(false);
+    showFeedback('correct');
+    beep(800, 0.08); setTimeout(() => beep(1200, 0.12), 80);
+    setTimeout(() => { newQuestion(); }, 850);
+  } else {
+    // FALLO
+    btn.classList.add('wrong');
+    btn.disabled = true;
+    mistakes++;
+    
+    if(mistakes === 1) {
+      // Primer fallo: solo pierde una oportunidad, sigue el juego
+      beep(150, 0.2, 'sawtooth', 0.05);
+      const q = $('question');
+      q.classList.add('shake');
+      setTimeout(() => q.classList.remove('shake'), 400);
+    } 
+    else if(mistakes === 2) {
+      // Segundo fallo: PIERDE LA RACHA
+      locked = true; // Bloquea el botón correcto restante
+      document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+      
+      streak = 0; // Reinicia racha a 0
+      updateScore(true); // true activa la animación de fuego roto
+      showFeedback('wrong');
+      beep(100, 0.4, 'sawtooth', 0.1);
+      
+      const q = $('question');
+      q.classList.add('shake');
+      setTimeout(() => q.classList.remove('shake'), 400);
+
+      // Espera 1.5 segundos para que veas la racha romperse y pasa a la siguiente
+      setTimeout(() => { newQuestion(); }, 1500);
+    }
+  }
+}
+
+function updateScore(isBroken = false){
+  $('streakPill').textContent = '🔥 ' + streak;
+  
+  // Si el récord actual supera al guardado, lo actualizamos
+  if (streak > record) {
+    record = streak;
+    localStorage.setItem('tabla_record_pro', record);
+    $('recordPill').textContent = '🏆 ' + record;
+  }
+
+  // Animación de racha rota
+  if (isBroken) {
+    const pill = $('streakPill');
+    pill.classList.add('broken');
+    // Se quita la clase después de 1.2s para que vuelva a la normalidad
+    setTimeout(() => { pill.classList.remove('broken'); }, 1200);
+  }
+}
+
+let fbTimer = null;
+function showFeedback(type){
+  const fb = $('feedback');
+  fb.className = 'feedback';
+  void fb.offsetWidth;
+  fb.innerHTML = (type === 'correct') ? '✓' : '✕';
+  fb.className = 'feedback ' + type + ' show';
+  clearTimeout(fbTimer);
+  fbTimer = setTimeout(() => { fb.className = 'feedback'; }, 900);
+}
+
+renderTable(1);
+showScreen('menu');
+</script>
+</body>
+</html>
